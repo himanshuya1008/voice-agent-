@@ -326,11 +326,23 @@ with st.sidebar:
 st.title("🎙️ Voice Interview Assistant")
 st.caption("Press START, allow the microphone, then just speak. Answers appear as text.")
 
+turn_credential_pairs = (
+    ("CLOUDFLARE_TURN_KEY_ID", "CLOUDFLARE_TURN_KEY_API_TOKEN"),
+    ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"),
+)
+turn_configured = any(
+    all(os.environ.get(name) for name in pair) for pair in turn_credential_pairs
+) or bool(os.environ.get("HF_TOKEN"))
+if not turn_configured:
+    st.warning(
+        "No TURN relay is configured. STUN-only connections can fail on restrictive "
+        "networks. Add TURN provider credentials to the deployment environment."
+    )
+
 ctx = webrtc_streamer(
     key="interview-mic",
     mode=WebRtcMode.SENDONLY,
     audio_receiver_size=4096,
-    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
     media_stream_constraints={
         "video": False,
         "audio": {"echoCancellation": True, "noiseSuppression": True, "autoGainControl": True},
